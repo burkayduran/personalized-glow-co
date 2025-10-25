@@ -10,8 +10,8 @@ interface CartStore {
   isLoading: boolean;
   
   addItem: (item: CartItem) => void;
-  updateQuantity: (variantId: string, quantity: number) => void;
-  removeItem: (variantId: string) => void;
+  updateQuantity: (index: number, quantity: number) => void;
+  removeItem: (index: number) => void;
   clearCart: () => void;
   setCartId: (cartId: string) => void;
   setCheckoutUrl: (url: string) => void;
@@ -29,12 +29,18 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         const { items } = get();
-        const existingItem = items.find(i => i.variantId === item.variantId);
+        // Check if item has same variant AND same personalization
+        const existingItem = items.find(i => {
+          const sameVariant = i.variantId === item.variantId;
+          const samePersonalization = JSON.stringify(i.personalization) === JSON.stringify(item.personalization);
+          return sameVariant && samePersonalization;
+        });
         
         if (existingItem) {
           set({
             items: items.map(i =>
-              i.variantId === item.variantId
+              (i.variantId === item.variantId && 
+               JSON.stringify(i.personalization) === JSON.stringify(item.personalization))
                 ? { ...i, quantity: i.quantity + item.quantity }
                 : i
             )
@@ -44,22 +50,22 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      updateQuantity: (variantId, quantity) => {
+      updateQuantity: (index, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(variantId);
+          get().removeItem(index);
           return;
         }
         
         set({
-          items: get().items.map(item =>
-            item.variantId === variantId ? { ...item, quantity } : item
+          items: get().items.map((item, i) =>
+            i === index ? { ...item, quantity } : item
           )
         });
       },
 
-      removeItem: (variantId) => {
+      removeItem: (index) => {
         set({
-          items: get().items.filter(item => item.variantId !== variantId)
+          items: get().items.filter((_, i) => i !== index)
         });
       },
 

@@ -55,4 +55,11 @@ export interface CartItem {
     name: string;
     value: string;
   }>;
+  personalization?: {
+    options: Array<{
+      category: string;
+      value: string;
+    }>;
+    additionalPrice: number;
+  };
 }
